@@ -49,9 +49,9 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-const API_BASE = window.location.hostname === "127.0.0.1"
-  ? "http://127.0.0.1:4001/api"
-  : "http://localhost:4001/api";
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:4001/api"
+  : "https://spendwise-backend-wju5.onrender.com/api";
 
 // Set up global Axios interceptor to automatically inject JWT token
 axios.interceptors.request.use(
