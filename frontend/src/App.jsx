@@ -47,6 +47,8 @@ import {
   AlertTriangle,
   Info,
   TrendingUp,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
@@ -253,11 +255,16 @@ const Signup = ({ setToast }) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) return setToast({ message: "Please fill in all fields", type: "error" });
+    if (!name || !email || !password || !confirmPassword) return setToast({ message: "Please fill in all fields", type: "error" });
+    if (password !== confirmPassword) {
+      return setToast({ message: "Passwords do not match", type: "error" });
+    }
     setLoading(true);
     try {
       const res = await axios.post(`${API_BASE}/auth/register`, { name, email, password });
@@ -269,6 +276,19 @@ const Signup = ({ setToast }) => {
       setToast({ message: err.response?.data?.message || "Registration failed", type: "error" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const { credential } = credentialResponse;
+      const res = await axios.post(`${API_BASE}/auth/google`, { token: credential });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data));
+      setToast({ message: `Account created successfully, welcome ${res.data.name}!`, type: "success" });
+      setTimeout(() => { window.location.href = "/"; }, 500);
+    } catch (err) {
+      setToast({ message: "Google Authentication failed", type: "error" });
     }
   };
 
@@ -306,13 +326,41 @@ const Signup = ({ setToast }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 dark:border-slate-700 pl-4 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Confirm Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 dark:border-slate-700 pl-4 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"
@@ -322,6 +370,23 @@ const Signup = ({ setToast }) => {
             {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
+
+        <div className="mt-6 flex items-center justify-center space-x-2">
+          <div className="h-px bg-gray-200 dark:bg-slate-800 flex-1"></div>
+          <span className="text-xs text-gray-400 dark:text-slate-500 uppercase tracking-widest">or</span>
+          <div className="h-px bg-gray-200 dark:bg-slate-800 flex-1"></div>
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setToast({ message: "Google signup failed", type: "error" })}
+            useOneTap
+            shape="pill"
+            text="signup_with"
+            theme="filled_blue"
+          />
+        </div>
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-slate-400">
           Already have an account?{" "}
